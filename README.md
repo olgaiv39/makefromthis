@@ -79,12 +79,16 @@ AI_ENABLED=false backend/.venv/bin/python tools/release_smoke.py --asgi
 AI_ENABLED=false backend/.venv/bin/python tools/verify_real_dataset.py
 ```
 
-[Deployment, environment variables, AI contracts and troubleshooting](docs/DEPLOYMENT.md)
-include single-service Docker/Render commands, safe optional environment-file
-loading, limits and browser acceptance. AI defaults to disabled. Baseten uses
-exactly `meta-models/muse-spark-open-1026`; the operator reported a successful
-structured smoke test. No live inference or image-grounded reasoning was performed
-for this craft-photo acceptance attempt. Public deployment and native Safari remain unverified.
+The commands above explicitly use `AI_ENABLED=false` for offline testing:
+OpenCV detection, nesting and SVG export work without Baseten calls. The existing
+Render configuration uses `AI_ENABLED=true` with a backend-only secret. See
+[Enabling Meta Muse Spark Open on Render](docs/DEPLOYMENT.md#enabling-meta-muse-spark-open-on-render)
+for deployment, environment values and one manually triggered inference check.
+
+Live Muse Spark Open recommendations through Baseten were successfully verified
+in Chrome during the hackathon demo, using `meta-models/muse-spark-open-1026`.
+This does not establish live image-understanding or SAM inference, or acceptance
+of a particular public deployment. Live AI consumes credits; never commit API keys.
 
 ## Credits
 

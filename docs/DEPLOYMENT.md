@@ -72,7 +72,7 @@ On hosting, prefer the host's runtime secret manager instead of shipping `.env`.
 | EXPENSIVE_REQUESTS_PER_MINUTE | 60; bounded process-wide request budget |
 | AI_REQUESTS_PER_MINUTE | 10; includes deterministic AI-route fallback requests |
 | REQUEST_BODY_TIMEOUT_SECONDS | 15; bounded request-body read |
-| AI_ENABLED | false; only true enables configured inference |
+| AI_ENABLED | runtime default false for offline mode; existing Render Blueprint sets true |
 | AI_TIMEOUT_SECONDS | 30; >0 and <=120, whole operation |
 | AI_MAX_CONCURRENCY | 2; 1–8 inference slots |
 | AI_CACHE_TTL_SECONDS | 0; opt-in process-local cache, <=300 seconds, <=16 entries |
@@ -89,6 +89,94 @@ On hosting, prefer the host's runtime secret manager instead of shipping `.env`.
 | RECOMMENDATION_MAX_TOKENS | 512; 64–2048; choose 1024 if an operator approves that budget |
 | BASETEN_API_KEY | backend-only Baseten secret |
 | LIVE_AI_TEST | not 1 by default; explicit one-request standalone smoke gate |
+
+## Enabling Meta Muse Spark Open on Render
+
+The committed `render.yaml` already enables AI and selects Baseten Muse Spark Open.
+This procedure uses that existing configuration; no Blueprint or application edits
+are required. OpenCV extracts pixel contours independently of Baseten. Muse ranks
+geometry-verified cutting alternatives and optionally provides image understanding
+to guide contour extraction. It does not provide a native segmentation mask, SAM
+inference, physical measurements or complete garment patterns.
+
+1. **Create or open the service.** In the Render Dashboard, open the existing
+   MakeFromThis Docker web service. For a new service, choose **New → Blueprint**,
+   connect the approved repository/branch and use its existing `render.yaml`.
+   Review the hosting plan and any cost before confirming creation.
+2. **Set the secret.** Open the service's **Environment** page and configure
+   `BASETEN_API_KEY` as a secret runtime environment variable. The existing
+   Blueprint uses `sync: false` so its value is supplied privately in Render.
+   Never commit keys, paste them into documentation, print them, or put them in
+   `VITE_*`, frontend code or Docker build arguments. All Baseten requests and
+   authentication are handled by the backend; the browser calls this app's API.
+3. **Confirm the existing runtime values:**
+
+   | Variable | Render value / behavior |
+   | --- | --- |
+   | `AI_ENABLED` | `true` — already set in the committed Blueprint |
+   | `RECOMMENDATION_PROVIDER` | `baseten` |
+   | `RECOMMENDATION_ENDPOINT_URL` | `https://inference.baseten.co/v1/chat/completions`; this is also the default when unset/empty |
+   | `RECOMMENDATION_MODEL_ID` | `meta-models/muse-spark-open-1026` — retain the exact hackathon model |
+   | `RECOMMENDATION_MAX_TOKENS` | `2048` in the existing Blueprint |
+   | `SEGMENTATION_PROVIDER` | `disabled` — default; no separate segmentation provider is needed |
+   | `AI_CACHE_TTL_SECONDS` | `0` by default; keep disabled for a fresh live verification |
+
+   Both text recommendations and optional image understanding share the
+   `RECOMMENDATION_*` settings and `BASETEN_API_KEY`. The client uses direct HTTP:
+   retain the full `/v1/chat/completions` endpoint, not the SDK base URL `/v1`.
+   Keep the existing `BIND_HOST=0.0.0.0`, `REQUIRE_FRONTEND=true` and `/ready`
+   health-check path. No GPU service is required.
+
+   **`backend/.env.local` is local only.** It is not the Render secret store and
+   must not be committed or shipped. Configure Render runtime environment
+   variables directly; do not set `MFT_ENV_FILE` to a path on your MacBook.
+4. **Apply and deploy.** For runtime-variable changes, select **Save and deploy**.
+   Use **Save, rebuild, and deploy** when a rebuild is needed. If you selected
+   **Save only**, the changes take effect on the next deploy, so redeploy the
+   approved build/commit and wait for it to become healthy. See Render's
+   [environment-variable instructions](https://render.com/docs/configure-environment-variables).
+5. **Check readiness and configuration without inference.** Replace the placeholder
+   with the actual service URL:
+
+   ```sh
+   export PUBLIC_URL='https://YOUR-SERVICE.onrender.com'
+   curl --fail --silent --show-error "$PUBLIC_URL/ready"
+   curl --fail --silent --show-error "$PUBLIC_URL/api/ai/availability"
+   ```
+
+   Expect HTTP 200 and `status: "ready"` from `/ready`. In availability, confirm
+   `ai_enabled: true`, both `material_vision.available` and
+   `recommendation.available` are `true`, and both entries report provider
+   `baseten` with model ID `meta-models/muse-spark-open-1026`.
+   These GET requests do not call Baseten. **Availability checks configuration,
+   not successful authentication, remaining credits or real inference.** Readiness
+   also does not require AI to be working.
+6. **Verify one manually triggered live recommendation.** Refresh the deployed app,
+   upload one unobstructed flat material photograph and select **Use photo-only
+   detection** to avoid a separate paid image-understanding request. Review and
+   accept the outline, supply a real measurement, then reach **Choose cutting
+   pieces**. Enter the material and intended use. Open browser Developer Tools →
+   Network and press **Suggest ideas with AI** once.
+
+   Inspect `POST /api/ai/cutting-ideas?use_ai=true`: success requires HTTP 200,
+   `status: "live_ai"`, a nonempty `ranked_projects` list and provenance containing
+   provider `baseten` and the exact model ID. With caching disabled, this confirms
+   a fresh validated inference response. `deterministic_fallback` or
+   `no_verified_fits` is not live-inference success. Record only the HTTP status
+   and safe error code if it fails; never copy keys, authentication headers or
+   model reasoning, and do not automatically retry. Choose a returned size,
+   check the fit and confirm a complete verified layout before downloading SVG.
+
+   **Live inference consumes Baseten credits.** Opening the app, checking
+   availability, OpenCV photo-only detection, **Check how many fit** and **Find
+   fitting options** do not invoke Muse. Optional image understanding and
+   **Suggest ideas with AI** do. There is no automatic paid retry.
+
+A real Muse recommendation response was successfully verified in Chrome during
+the hackathon demo, as confirmed by the operator. That evidence is separate from
+verification of this Render deployment and does not establish live vision or SAM
+inference. Offline tests explicitly use `AI_ENABLED=false`; an AI-enabled Render
+service uses its existing `AI_ENABLED=true` configuration and private secret.
 
 ## Baseten: configuration and diagnostics
 
@@ -223,7 +311,8 @@ Endpoint DNS is operator-trusted, not a general SSRF/rebinding firewall.
 
 After tests and explicit push/deployment approval, publish the reviewed repository
 and use existing render.yaml via Render Dashboard **New → Blueprint**. It requests
-one Docker web service, AI disabled, /ready health check, free plan. Review actual
+one Docker web service, the existing AI-enabled Baseten profile, a private key
+prompt, /ready health check and free plan. Review actual
 plan availability/cost; do not substitute paid hosting automatically. Any compatible
 Docker host is an alternative; no free hosting or public success is assumed.
 For an existing approved Render service:
@@ -234,8 +323,12 @@ render deploys create "$RENDER_SERVICE_ID" --commit "$(git rev-parse HEAD)" --wa
 export PUBLIC_URL='https://ACTUAL_APPROVED_HOST'
 curl --fail "$PUBLIC_URL/health"
 curl --fail "$PUBLIC_URL/ready"
-backend/.venv/bin/python tools/release_smoke.py --url "$PUBLIC_URL"
+curl --fail "$PUBLIC_URL/api/ai/availability"
 ```
+
+For the AI-enabled service, follow the Render section above for one manually
+triggered inference check. `tools/release_smoke.py` is an offline-mode check and
+requires `AI_ENABLED=false` on its target service.
 
 No push, deployment, GPU or paid inference is authorized by these commands alone.
 .gitignore/.dockerignore exclude .env, keys, venvs, node_modules, dist, caches,
