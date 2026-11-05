@@ -12,7 +12,15 @@ services:
       - key: BIND_HOST
         value: "0.0.0.0"
       - key: AI_ENABLED
-        value: "false"
+        value: "true"
+      - key: RECOMMENDATION_PROVIDER
+        value: "baseten"
+      - key: RECOMMENDATION_MODEL_ID
+        value: "meta-models/muse-spark-open-1026"
+      - key: RECOMMENDATION_MAX_TOKENS
+        value: "2048"
+      - key: BASETEN_API_KEY
+        sync: false
       - key: REQUIRE_FRONTEND
         value: "true"
       - key: GEOMETRY_MAX_CONCURRENCY
