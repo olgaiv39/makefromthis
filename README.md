@@ -5,9 +5,11 @@ Turn a photograph of leftover material into a measured cutting plan for rectangl
 Built for the **Meta Global AI Developer Hackathon**.
 [GitHub repository](https://github.com/olgaiv39/makefromthis) · [Quick Start](#quick-start)
 
-**Demo video:** a public video link has not been added to this repository.
+## Demo video
 
-## What MakeFromThis does
+[Watch the hackathon demo on YouTube](https://youtu.be/ZmWH-WzxUy0).
+
+## Features
 
 Upload one flat material piece, review its automatically detected outline, enter a
 known measurement, then choose the size and number of pieces to cut. MakeFromThis
@@ -105,7 +107,7 @@ successfully verified in Chrome during the hackathon demo; that does not establi
 live image-understanding verification. For one deliberate live check and hosting
 setup, see [Enabling Meta Muse Spark Open on Render](docs/DEPLOYMENT.md#enabling-meta-muse-spark-open-on-render).
 
-## Run with Docker
+## Docker
 
 Requires Docker with its daemon running. From the repository root:
 
@@ -126,7 +128,7 @@ This launch is offline by default. Optional container AI settings belong in runt
 environment secrets, never the image. See [deployment configuration](docs/DEPLOYMENT.md#environment-and-secrets).
 Do not run the local server and container on port 8000 at the same time.
 
-## How to use the application
+## Using MakeFromThis
 
 1. **Add photo.** Photograph one isolated, flat material piece from above, with
    its full boundary visible against a contrasting background. Separate scraps
@@ -152,7 +154,17 @@ supply a genuine measurement for a cutting file you intend to use. A made-up tes
 measurement is illustrative only. The app starts with upload; internal annotated
 and synthetic examples are not offered as public gallery choices.
 
-## Development and testing
+## Architecture
+
+React + TypeScript + Vite provide the mobile-first interface. FastAPI handles image
+processing and API requests; OpenCV extracts contours, Shapely validates geometry,
+and a deterministic grid heuristic places pieces. SVG exports use millimeter units.
+No account, database, GPU or local model weights are required. Baseten inference is
+optional and handled only by the backend.
+
+For a source map, correctness invariants and contributor guidance, start with
+[AGENTS.md](AGENTS.md). Detailed runtime configuration is in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Optional hot-reload development
 
@@ -177,7 +189,7 @@ For AI-enabled hot reload, prepare that file as above and replace Terminal 1 wit
 AI_ENABLED=true MFT_ENV_FILE="$PWD/backend/.env.local" backend/.venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 ```
 
-### Testing
+## Testing
 
 Install pytest only when running backend tests. From the repository root:
 
@@ -194,6 +206,13 @@ do not establish live inference. The in-process smoke checks built assets and re
 API/layout/SVG operations, without a browser. More diagnostics and optional browser
 checks are in [deployment verification](docs/DEPLOYMENT.md#reproducible-verification-and-browser-acceptance).
 
+**Public-clone test limitation:** two tests in `backend/test_automatic_detection.py`
+also require the local-only `examples/craft_photos/incoming/Cutting_tools_sewing.jpg`,
+which is not tracked in Git. Without that original photograph those tests fail
+with a missing-file error; do not interpret this as a detection regression or
+replace the input with a synthetic image. The included `Cutting_mat.jpg` example
+is tracked. This missing negative fixture does not prevent running the app.
+
 ## Deployment
 
 GitHub hosts the source code; this README does not assert a live application URL.
@@ -205,12 +224,7 @@ for the existing AI-enabled Render profile, backend-only `BASETEN_API_KEY` secre
 readiness checks and a manually triggered recommendation check. The local private
 environment file is not deployed. Hosting availability and cost depend on the host.
 
-## Architecture and current limitations
-
-React + TypeScript + Vite provide the mobile-first interface. FastAPI handles image
-processing and API requests; OpenCV extracts contours, Shapely validates geometry,
-and a deterministic grid heuristic places pieces. SVG exports use millimeter units.
-No account, database, GPU or local model weights are required.
+## Limitations
 
 - Cutting supports **1–50 rectangles or squares**, not complete garment patterns,
   curved pieces or automatic seam allowance.
