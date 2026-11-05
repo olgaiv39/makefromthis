@@ -1,0 +1,65 @@
+# Local secrets (retain the documented empty template)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+# Dependencies and generated files
+.venv/
+venv/
+node_modules/
+dist/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.tsbuildinfo
+.coverage
+htmlcov/
+playwright-report/
+test-results/
+.DS_Store
+*.log
+# Keep only the small synthetic assets, never dataset archives or weights
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.pt
+*.pth
+*.safetensors
+datasets/
+downloads/
+
+# Legacy empty root npm lock (frontend owns the active npm lock)
+/package-lock.json
+.aws/
+.ssh/
+.codex/
+secrets*.json
+*.p12
+*.pfx
+
+# Local-only Gemini finalist acquisition: originals, downloader and receipts.
+/examples/craft_photos/incoming/finalists/
+
+# Local photo research and download artifacts
+/examples/craft_photos/*
+!/examples/craft_photos/incoming/
+/examples/craft_photos/incoming/*
+!/examples/craft_photos/incoming/Cutting_mat.jpg
+/tools/download_craft_candidates.py
+/tools/prepare_craft_photos.py
+/backend/test_host_photo_download.py
+/backend/test_craft_photos.py
+
+# Local photo research and download artifacts
+/examples/craft_photos/*
+!/examples/craft_photos/incoming/
+/examples/craft_photos/incoming/*
+!/examples/craft_photos/incoming/Cutting_mat.jpg
+/tools/download_craft_candidates.py
+/tools/prepare_craft_photos.py
+/backend/test_host_photo_download.py
+/backend/test_craft_photos.py

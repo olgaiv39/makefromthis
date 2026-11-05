@@ -1,0 +1,21 @@
+# Optional Render Blueprint. REVIEW plan/availability before creating any service.
+# This file is configuration only; no deployment is performed by local scripts.
+services:
+  - type: web
+    name: makefromthis
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready
+    envVars:
+      - key: BIND_HOST
+        value: "0.0.0.0"
+      - key: AI_ENABLED
+        value: "false"
+      - key: REQUIRE_FRONTEND
+        value: "true"
+      - key: GEOMETRY_MAX_CONCURRENCY
+        value: "2"
+      - key: EXPENSIVE_REQUESTS_PER_MINUTE
+        value: "60"

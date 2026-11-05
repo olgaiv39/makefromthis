@@ -1,0 +1,139 @@
+{
+  "status": "success",
+  "reason": null,
+  "clearance_mm": 0.5,
+  "grid_mm": 0.5,
+  "utilization_percent": 9.51699354367158,
+  "material_area_mm2": 105.0752,
+  "placed_area_mm2": 10.0,
+  "verification": {
+    "valid": true,
+    "errors": [],
+    "missing_parts": []
+  },
+  "material": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          2.88,
+          9.52
+        ],
+        [
+          11.200000000000001,
+          10.08
+        ],
+        [
+          14.08,
+          7.84
+        ],
+        [
+          14.72,
+          2.56
+        ],
+        [
+          9.44,
+          0.88
+        ],
+        [
+          1.04,
+          1.68
+        ],
+        [
+          1.2,
+          6.640000000000001
+        ],
+        [
+          2.88,
+          9.52
+        ]
+      ]
+    ]
+  },
+  "placements": [
+    {
+      "id": "part-01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              5.54,
+              4.88
+            ],
+            [
+              2.54,
+              4.88
+            ],
+            [
+              2.54,
+              3.88
+            ],
+            [
+              4.54,
+              3.88
+            ],
+            [
+              4.54,
+              1.88
+            ],
+            [
+              5.54,
+              1.88
+            ],
+            [
+              5.54,
+              4.88
+            ]
+          ]
+        ]
+      },
+      "rotation_deg": 180,
+      "x_mm": 2.54,
+      "y_mm": 1.88
+    },
+    {
+      "id": "part-02",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              6.04,
+              1.88
+            ],
+            [
+              9.04,
+              1.88
+            ],
+            [
+              9.04,
+              2.88
+            ],
+            [
+              7.04,
+              2.88
+            ],
+            [
+              7.04,
+              4.88
+            ],
+            [
+              6.04,
+              4.88
+            ],
+            [
+              6.04,
+              1.88
+            ]
+          ]
+        ]
+      },
+      "rotation_deg": 0,
+      "x_mm": 6.04,
+      "y_mm": 1.88
+    }
+  ],
+  "source": "synthetic (MakeFromThis explicit polygon generator v2; original procedural SVG texture; no photographic dataset)",
+  "units": "mm"
+}

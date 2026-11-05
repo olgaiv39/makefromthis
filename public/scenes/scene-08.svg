@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="280" viewBox="0 0 400 280">
+<title>Regression sample 08 — synthetic material visualization</title>
+<desc>Small synthetic baseline retained for comparison. Original procedural texture, not a photograph.</desc>
+<defs><clipPath id="material-clip"><path d="M300,115 L350,119 L345,158 L303,155 Z" clip-rule="evenodd"/></clipPath></defs>
+<rect width="400" height="280" fill="#eeeae2"/>
+<path data-material="true" d="M300,115 L350,119 L345,158 L303,155 Z" fill="#b4b2a2" fill-rule="evenodd" stroke="#6e6d5f" stroke-width="1.3"/>
+<path d="M305,124l2,-2 M317,124l2,-2 M329,124l2,-2 M341,124l2,-2 M306,130l2,-2 M318,130l2,-2 M330,130l2,-2 M342,130l2,-2 M306,136l2,-2 M318,136l2,-2 M330,136l2,-2 M342,136l2,-2 M307,142l2,-2 M319,142l2,-2 M331,142l2,-2 M307,148l2,-2 M319,148l2,-2 M331,148l2,-2" fill="none" stroke="#6e6d5f" stroke-width=".8" stroke-linecap="round" opacity=".28" clip-path="url(#material-clip)"/>
+<text x="16" y="273" fill="#666052" font-family="sans-serif" font-size="9" letter-spacing="1.2">SYNTHETIC / REGRESSION SAMPLE 08</text>
+</svg>

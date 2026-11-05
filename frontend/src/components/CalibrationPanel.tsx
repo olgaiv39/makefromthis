@@ -1,0 +1,15 @@
+import type { Material, Point, ScaleMode } from '../types';
+import ImageStage from './ImageStage';
+import { materialGeometry, geometryBounds, measuredScale } from '../types';
+export interface CalibrationDraft { method:'width'|'marker';millimeters:string;markers:Point[] }
+export default function CalibrationPanel({material,points,scale,scaleMode='user_calibrated',draft,onDraft,onApply}:{material:Material;points:Point[];scale?:number;scaleMode?:ScaleMode;draft:CalibrationDraft;onDraft:(d:CalibrationDraft)=>void;onApply:(n:number,mode?:ScaleMode)=>void}) {
+  const bounds=geometryBounds(materialGeometry(material,points)),width=bounds[2]-bounds[0];
+  const distance=draft.method==='width'?width:draft.markers.length===2?Math.hypot(draft.markers[1][0]-draft.markers[0][0],draft.markers[1][1]-draft.markers[0][1]):0;
+  const candidate=Number(draft.millimeters)/distance,valid=Number.isFinite(candidate)&&candidate>0&&distance>=1;
+  return <section aria-labelledby="scale-title"><p className="eyebrow">Enter measurements</p><h2 id="scale-title">Give your photo a real size.</h2><p>We need one measurement before making a cutting file. Use a ruler on the same flat surface as the material.</p><fieldset><legend>What can you measure?</legend><label className="check"><input type="radio" name="calibration" checked={draft.method==='width'} onChange={()=>onDraft({...draft,method:'width'})}/> The full horizontal width of my detected material</label><label className="check"><input type="radio" name="calibration" checked={draft.method==='marker'} onChange={()=>onDraft({...draft,method:'marker'})}/> A ruler or an edge between two points in the photo</label></fieldset>
+    {draft.method==='marker'&&<><p>Tap both ends of the distance you know. {draft.markers.length} of 2 points selected. Tap again to start over.</p><ImageStage material={material} interactive onPoint={p=>onDraft({...draft,markers:draft.markers.length===2?[p]:[...draft.markers,p]})}>{draft.markers.length===2&&<line x1={draft.markers[0][0]} y1={draft.markers[0][1]} x2={draft.markers[1][0]} y2={draft.markers[1][1]} className="marker-line"/>}{draft.markers.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={material.width*.012} className="vertex"/>)}</ImageStage></>}
+    <label className="measure-label">{draft.method==='width'?'Known width (mm)':'Known reference length (mm)'}<input type="number" inputMode="decimal" min="0" step="any" value={draft.millimeters} onChange={e=>onDraft({...draft,millimeters:e.target.value})}/></label><p className="hint">Enter millimeters: 1 cm = 10 mm.</p><button className="primary" disabled={!valid} onClick={()=>onApply(candidate,'user_calibrated')}>Apply measurement</button>
+    {measuredScale(scale,scaleMode)&&<p role="status" className="selection">Measurement applied. Your detected material is {(width*scale!).toFixed(1)} mm wide.</p>}
+    <details className="options"><summary>Getting an accurate size</summary><p className="hint">Take the photo straight from above. A tilted camera, a bent ruler or material that isn’t flat can change the apparent size. Check a known distance on the printed pattern before cutting.</p></details>
+  </section>;
+}

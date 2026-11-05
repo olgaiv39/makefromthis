@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="280" viewBox="0 0 400 280">
+<title>Cardboard offcut — synthetic material visualization</title>
+<desc>Large irregular cardboard silhouette with procedural corrugation. Original procedural texture, not a photograph.</desc>
+<defs><clipPath id="material-clip"><path d="M26,42 L236,22 L368,64 L352,196 L280,252 L72,238 L30,166 Z" clip-rule="evenodd"/></clipPath></defs>
+<rect width="400" height="280" fill="#eeeae2"/>
+<path data-material="true" d="M26,42 L236,22 L368,64 L352,196 L280,252 L72,238 L30,166 Z" fill="#bd945c" fill-rule="evenodd" stroke="#79572f" stroke-width="1.3"/>
+<path d="M236.000,22H236.000 M173.000,28H254.857 M110.000,34H273.714 M47.000,40H292.571 M26.129,46H311.429 M26.323,52H330.286 M26.516,58H349.143 M26.710,64H368.000 M26.903,70H367.273 M27.097,76H366.545 M27.290,82H365.818 M27.484,88H365.091 M27.677,94H364.364 M27.871,100H363.636 M28.065,106H362.909 M28.258,112H362.182 M28.452,118H361.455 M28.645,124H360.727 M28.839,130H360.000 M29.032,136H359.273 M29.226,142H358.545 M29.419,148H357.818 M29.613,154H357.091 M29.806,160H356.364 M30.000,166H355.636 M33.500,172H354.909 M37.000,178H354.182 M40.500,184H353.455 M44.000,190H352.727 M47.500,196H352.000 M51.000,202H344.286 M54.500,208H336.571 M58.000,214H328.857 M61.500,220H321.143 M65.000,226H313.429 M68.500,232H305.714 M72.000,238H298.000 M161.143,244H290.286 M250.286,250H282.571" fill="none" stroke="#79572f" stroke-width=".8" stroke-linecap="round" opacity=".28" clip-path="url(#material-clip)"/>
+<text x="16" y="273" fill="#666052" font-family="sans-serif" font-size="9" letter-spacing="1.2">SYNTHETIC / CARDBOARD OFFCUT</text>
+</svg>
