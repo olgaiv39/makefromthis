@@ -3,12 +3,13 @@
 ## Installation and one-service startup
 
 Use Python 3.12 and Node 20+ (Docker pins patch-version Node/Python bases). From
-repository root, install reproducible runtime pins and the backend test runner:
+repository root, install reproducible runtime pins and build the frontend. The
+[README Quick Start](../README.md#quick-start) is the recommended first launch;
+pytest is needed only for tests.
 
 ```sh
 python3.12 -m venv backend/.venv
 backend/.venv/bin/python -m pip install --only-binary=:all: -r backend/requirements-runtime.lock
-backend/.venv/bin/python -m pip install pytest==8.4.2
 backend/.venv/bin/python -m pip check
 backend/.venv/bin/python -c 'import shapely; from shapely.geometry import box; assert box(0,0,1,1).area == 1'
 npm --prefix frontend ci
@@ -33,7 +34,8 @@ docker run --rm -p 8000:8000 --read-only \
 ```
 
 The Docker image builds React, installs binary Python wheels, asserts real Shapely,
-runs as a non-root user and packages internal regression assets and the curated manual-photo manifest.
+runs as a non-root user and packages internal regression assets. The public
+gallery is empty; users upload a photo for automatic detection.
 It needs no GPU, model weights, database, Xcode or persistent disk. Fixed base tags
 are not immutable digests; review base updates/digests before a public release.
 Docker execution remains unverified here because daemon access is sandbox-denied.
@@ -45,14 +47,18 @@ variables. The single-service launcher loads existing `backend/.env.local` when
 no `MFT_ENV_FILE` is set; ordinary `.env` files are **not auto-discovered**. To explicitly load a private file:
 
 ```sh
-cp -n .env.example .env
-chmod 600 .env
+if [ ! -f backend/.env.local ]; then
+  (umask 077; cp .env.example backend/.env.local)
+fi
+chmod 600 backend/.env.local
 # Edit the existing private file locally; never commit it.
-MFT_ENV_FILE="$PWD/.env" backend/.venv/bin/python tools/start_release.py
+MFT_ENV_FILE="$PWD/backend/.env.local" backend/.venv/bin/python tools/start_release.py
 ```
 
-The same `MFT_ENV_FILE` works with the documented Uvicorn command and standalone
-Baseten smoke. Parsing is backend-only, bounded to 64 KiB and atomic. Existing
+The same `MFT_ENV_FILE` works with [direct Uvicorn](../README.md#optional-hot-reload-development)
+and the standalone Baseten smoke. Direct Uvicorn loads a private file only when
+`MFT_ENV_FILE` is set; it does not discover `backend/.env.local` automatically.
+Parsing is backend-only, bounded to 64 KiB and atomic. Existing
 process variables take precedence. Supported syntax: `KEY=value`, optional
 `export`, full-line comments and matching whole-value quotes. Values are literal:
 no shell execution, interpolation, escapes or multiline values. Unknown/non-backend
@@ -77,7 +83,7 @@ On hosting, prefer the host's runtime secret manager instead of shipping `.env`.
 | AI_MAX_CONCURRENCY | 2; 1–8 inference slots |
 | AI_CACHE_TTL_SECONDS | 0; opt-in process-local cache, <=300 seconds, <=16 entries |
 | SEGMENTATION_PROVIDER | disabled for the public automatic workflow; legacy API configuration only |
-| RECOMMENDATION_PROVIDER | baseten for public image understanding / ideas; disabled offline |
+| RECOMMENDATION_PROVIDER | runtime default disabled; template/Render select baseten; AI_ENABLED=false prevents calls regardless |
 | SEGMENTATION_ENDPOINT_URL / RECOMMENDATION_ENDPOINT_URL | explicit full HTTPS gateway URLs; Baseten has exact default below |
 | SEGMENTATION_MODEL_ID / RECOMMENDATION_MODEL_ID | served model IDs; Baseten exact default below |
 | SEGMENTATION_AUTH_TOKEN / RECOMMENDATION_AUTH_TOKEN | secret gateway credentials; Baseten uses BASETEN_API_KEY instead |
@@ -86,7 +92,7 @@ On hosting, prefer the host's runtime secret manager instead of shipping `.env`.
 | SEGMENTATION_AUTH_PREFIX / RECOMMENDATION_AUTH_PREFIX | empty; literal custom-header prefix |
 | SEGMENTATION_SUPPORTS_POINTS / SEGMENTATION_SUPPORTS_BOXES | false; enable only for deployed capabilities |
 | RECOMMENDATION_PROTOCOL | structured/custom gateway or openai; Baseten forces openai |
-| RECOMMENDATION_MAX_TOKENS | 512; 64–2048; choose 1024 if an operator approves that budget |
+| RECOMMENDATION_MAX_TOKENS | runtime/template default 512; 64–2048; README AI setup and Render use 2048; standalone smoke uses 1024 |
 | BASETEN_API_KEY | backend-only Baseten secret |
 | LIVE_AI_TEST | not 1 by default; explicit one-request standalone smoke gate |
 
@@ -196,7 +202,7 @@ Set these in the backend runtime environment or explicitly selected private file
 export RECOMMENDATION_PROVIDER=baseten
 export RECOMMENDATION_ENDPOINT_URL=https://inference.baseten.co/v1/chat/completions
 export RECOMMENDATION_MODEL_ID=meta-models/muse-spark-open-1026
-export RECOMMENDATION_MAX_TOKENS=1024
+export RECOMMENDATION_MAX_TOKENS=2048
 export SEGMENTATION_PROVIDER=disabled
 # Supply BASETEN_API_KEY securely through host secrets or private .env; no key here.
 ```
@@ -208,7 +214,7 @@ With the key securely exported, explicitly authorize **one** standalone request:
 ```sh
 LIVE_AI_TEST=1 backend/.venv/bin/python tools/baseten_live_smoke.py
 # Or, for an explicitly selected private file:
-MFT_ENV_FILE="$PWD/.env" LIVE_AI_TEST=1 backend/.venv/bin/python tools/baseten_live_smoke.py
+MFT_ENV_FILE="$PWD/backend/.env.local" LIVE_AI_TEST=1 backend/.venv/bin/python tools/baseten_live_smoke.py
 ```
 
 Choose one command, not both. The smoke prechecks actual geometry, performs a
@@ -239,7 +245,7 @@ local preflight before any billing/inference request**, not a Baseten failure.
 
 - GET `/health`: liveness. GET `/ready`: real geometry, Pillow and packaged assets;
   production additionally requires the built UI. AI health is not required.
-- GET `/api/demo-scenes`: curated manual-outline photographs only (currently empty). Fixture detail routes remain
+- GET `/api/demo-scenes`: public photograph choices (currently empty). Fixture detail routes remain
   available for reproducibility, never normal gallery/offline fallback choices.
 - GET `/api/demo-scenes/{id}` and `/{id}/material`: source metadata and polygons;
   photograph material is in pixels until explicit calibration.
@@ -247,8 +253,8 @@ local preflight before any billing/inference request**, not a Baseten failure.
 - POST `/api/layouts` and `/api/layouts/svg`: `template_id`, clearance_mm/grid_mm;
   either `material_mm` GeoJSON or scene_id. Photograph scenes additionally require
   scene_mm_per_pixel and scene_scale_mode (`illustrative` or `user_calibrated`).
-  Custom parts_mm accepts 1–50 parts; source_scene_id preserves photo attribution
-  on manually edited outlines. Invalid input returns 422, unknown IDs 404.
+  Custom parts_mm accepts 1–50 parts; source_scene_id preserves attribution
+  when geometry originates from an attributed scene. Invalid input returns 422, unknown IDs 404.
 - Masks are binary black/white SVG rect/polygon paint order, preserving holes and
   disconnected regions. The reader rejects unsupported transforms/styles/paths;
   it is not a general raster tracer. Geometry also accepts Polygon/MultiPolygon.
@@ -283,9 +289,9 @@ textual image understanding and cutting ideas:
   Strictly validated material classification, normalized approximate region,
   flatness and risks guide pixel processing; model coordinates never become
   cutting geometry. Failure is explicit, with no automatic paid retry/fallback.
-- OpenCV normalizes colour, estimates border colours, refines foreground with
-  GrabCut and extracts/simplifies the actual contour. CPU input is bounded to
-  768px and 3 iterations, one worker at a time. Ambiguity, competing pieces,
+- OpenCV normalizes colour, evaluates border and spatial background hypotheses,
+  refines foreground with GrabCut and extracts/simplifies the actual contour.
+  Processing uses bounded hypotheses and a 768px image, one worker at a time. Ambiguity, competing pieces,
   internal holes and missing edges are refused. Output is approximate, requires
   user confirmation, and is not SAM or ground truth. No dimensions are inferred.
 - POST `/api/ai/cutting-ideas`: calibrated geometry/width/height, preferences,
@@ -297,7 +303,7 @@ textual image understanding and cutting ideas:
 
 ## Bounds and public deployment
 
-Uploads: browser-local <=20 MiB; AI <=8 MiB, 8192 pixels/axis, <=16 million pixels,
+Uploads: browser and detection API <=8 MiB, 8192 pixels/axis, <=16 million pixels,
 verified MIME/decoding and EXIF normalization. Geometry/recommendation bodies
 <=256 KiB; query <=8 KiB; <=2048 vertices/geometry and coordinates <=1,000,000.
 Solver limits 50 parts/250,000 candidates plus API weighted-work budget 10,000,000;
@@ -338,18 +344,21 @@ assets/fixtures belong in the repository; frontend and Python locks are retained
 ## Reproducible verification and browser acceptance
 
 ```sh
+backend/.venv/bin/python -m pip install pytest==8.4.2
 AI_ENABLED=false backend/.venv/bin/python -m pytest -q backend
-npm --prefix frontend test
-npm --prefix frontend run build
+AI_ENABLED=false npm --prefix frontend test
+AI_ENABLED=false npm --prefix frontend run build
 AI_ENABLED=false backend/.venv/bin/python tools/release_smoke.py --asgi
 AI_ENABLED=false backend/.venv/bin/python tools/verify_real_dataset.py
 AI_ENABLED=false backend/.venv/bin/python tools/verify_demo_scenes.py
 ```
 
-Internal fixtures regenerate with `python3.12 tools/generate_scenes.py` without entering
-the public gallery. CTVG reimport takes an explicit archive path; see DATA_SOURCES.
-Regression results are recorded in HACKATHON_SUBMISSION. Unavailable craft-photo
-candidates have no acceptance results; see examples/craft_photos/candidates.json. ASGI tests exercise actual routes/assets/geometry, not browser clicks.
+Internal fixtures remain separate from the public gallery. CTVG provenance and
+reimport details are in [DATA_SOURCES.md](DATA_SOURCES.md). ASGI tests exercise
+actual routes/assets/geometry, not browser clicks. The tracked
+[Cutting_mat.jpg](../examples/craft_photos/incoming/Cutting_mat.jpg) is a real
+automatic-detection example; its scale is unknown, so test measurements must not
+be presented as physical ground truth. See [photograph credits](PHOTO_CREDITS.md).
 Optional browser test, using an already installed Playwright and Chrome, Node 20+:
 
 ```sh
@@ -358,8 +367,9 @@ SMOKE_URL=http://127.0.0.1:8000 npm --prefix frontend run smoke
 # CHROME_PATH=/absolute/path/to/chrome
 ```
 
-Browser launch/listening sockets were blocked in this sandbox; no interactive,
-iPhone Safari, console-clean, actual file-saving or public HTTPS result is claimed.
+Live Muse recommendations were verified by the operator in Chrome during the
+hackathon demo. The commands above do not independently establish current browser,
+iPhone Safari, console-clean, actual file-saving or public HTTPS acceptance.
 On a permitted host, verify ordinary photograph upload → Find material → review → Use this outline → scale gate →
 user measurement → rectangle size and quantity → fit → preview → SVG download.
 Go Back and confirm the image persists. Then test automatic detection refusal,
